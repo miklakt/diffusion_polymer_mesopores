@@ -391,5 +391,5 @@ newton:isaac:method:pseudohessian
 newton:isaac:tolerance:1e-08
 output:pro:append:true
 pro:mon:*:phi
-pro:mol:surf:phi
+pro:mol:*:phi
 start
