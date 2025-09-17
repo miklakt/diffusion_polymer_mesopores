@@ -452,7 +452,7 @@ kal:newton:isaac:residual
 kal:output:variable:free_energy
 kal:sys:variable:free_energy
 sys:NN:initial_guess:file
-sys:NN:guess_inputfile:output/empty_pore.guess
+sys:NN:guess_inputfile:output/empty_pore_1.guess
 sys:NN:final_guess:next_problem
 start
 mon:C:frozen_range:1,64;3,69
