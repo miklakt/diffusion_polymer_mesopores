@@ -65,6 +65,6 @@ if __name__ == "__main__":
     pore_length = 52
     walls = create_walls(len(R), len(Z), pore_radius, pore_length)
     fig, ax = plot_with_slider(Z, R, Phis.transpose(0,2,1), fix_clim=True, walls=walls.T)
-    plt.show()
+    fig.show()
 # %%
 
