@@ -33,10 +33,10 @@ Our findings provide a basic physical explanation for the exquisite permselectiv
   5. Definition of grids and boundary conditions for the Smoluchowski equation; construction of the matrix operator.  
   6. Solver for the Smoluchowski equation yielding total flux and pore resistance.  
 
-- **`/notebooks/`**  
-  Jupyter notebooks showcasing the workflow, with explanatory text and figures.  
+- **`main.ipynb`**  
+  Jupyter notebook showcasing the workflow, with explanatory text and figures.  
 
-- **`/examples/`**  
+- **`/SCF/`**  
   Example input files and SCF data to reproduce selected results from the manuscript.  
 
 - **`README.md`**  
@@ -54,22 +54,12 @@ To run the code, you will need:
   - `scipy`
   - `matplotlib`
   - `jupyter`
+  - `ipympl`
+  - `pandas`
 
-- [**Namics** package](reference) package is used to calculate equilibrium volume fraction distributions of polymers and other chain molecules in inhomogeneous systems using Self-Consistent Field (SCF) theory
+- [**Namics** package](reference) or SFBox is used to calculate equilibrium volume fraction distributions of polymers and other chain molecules in inhomogeneous systems using Self-Consistent Field (SCF) theory
 
 ---
-
-<!-- ## Usage
-
-1. Run SCF calculations in NAMICS for your polymer–pore system.  
-2. Place the volume fraction output files in the `examples/` folder (or your own folder).  
-3. Open the provided Jupyter notebook in `notebooks/`, which demonstrates step by step how to:
-   - Import SCFT profiles.  
-   - Compute insertion free energies.  
-   - Solve the Smoluchowski equation for flux.  
-   - Extract pore resistance.  
-
---- -->
 
 ## Citation
 
