@@ -1,2 +1,4 @@
-SCF/* filter=lfs diff=lfs merge=lfs -text
 SCF/** filter=lfs diff=lfs merge=lfs -text
+
+# Override: store these files in normal Git
+SCF/input/*.in -filter -diff -merge text
