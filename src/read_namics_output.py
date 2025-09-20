@@ -28,19 +28,19 @@ def extract_volume_fractions_per_grafting_range(df, value_cols=None
         for k in grids if pattern.match(k)
     )
 
-    phis = []
+    phi_n = []
     for _, k in mol_keys:
         phi = grids[k]
-        phis.append(phi.T)
+        phi_n.append(phi.T)
     
-    phis = np.array(phis)
+    phi_n = np.array(phi_n)
 
     z_vals = z_vals - (np.max(z_vals)-np.min(z_vals))/2 #make pore canter at z=0
 
     result = {
         "R":r_vals,
         "Z":z_vals,
-        "phi_s":phis 
+        "phi_n":phi_n 
     }
 
     if "mon_C_phi" in grids:
@@ -65,7 +65,7 @@ def create_walls(xlayers, ylayers, pore_radius, pore_length, colloid_diameter = 
     W_arr[int(ylayers/2-pore_length/2):int(ylayers/2+pore_length/2+1), pore_radius:] = True
     if colloid_diameter is not None:
         W_arr = ndimage.binary_dilation(W_arr, structure = generate_circle_kernel(d))
-    return W_arr
+    return W_arr.T
 
 def build_scf_results(
     basename: str,
@@ -171,19 +171,18 @@ def build_scf_results(
 
         raw = pd.read_table(path, index_col=False)
 
-        # You must provide this function in your environment.
-        # It should return a dict-like structure with keys including "phi_s" (list/array per species)
+        # Reads axis and "phi_n"
         extracted = extract_volume_fractions_per_grafting_range(raw)
 
-        # Collapse species-specific phi_s into total phi
-        phi_total = np.sum(extracted["phi_s"], axis=0)
+        # Collapse grafting site specific phi_n into total phi
+        phi_total = np.sum(extracted["phi_n"], axis=0)
 
         rec = dict(extracted)  # shallow copy
         rec["colloid_position"] = colloid_positions[idx]
         rec["phi"] = phi_total
-        # remove phi_s to avoid carrying large per-species arrays if not needed
-        if "phi_s" in rec:
-            del rec["phi_s"]
+        # remove phi_n to avoid carrying large arrays if not needed
+        if "phi_n" in rec:
+            del rec["phi_n"]
 
         profiles_records.append(rec)
 
@@ -209,7 +208,7 @@ def build_scf_empty_pore_results(
     chi_PS: float,
     *,
     verbose: bool = False,
-    keep_phi_s: bool = True
+    keep_phi_n: bool = True
 ) -> dict:
     """
     Build 'empty pore' SCF results from a single .pro file.
@@ -238,48 +237,27 @@ def build_scf_empty_pore_results(
 
     raw = pd.read_table(pro_path, index_col=False)
 
-    # User-provided function expected to return a dict-like object
+    # Reads axis and "phi_n"
     extracted = extract_volume_fractions_per_grafting_range(raw)
-    if "phi_s" not in extracted:
+    if "phi_n" not in extracted:
         raise KeyError(
-            "extract_volume_fractions_per_grafting_range did not return 'phi_s'. "
+            "extract_volume_fractions_per_grafting_range did not return 'phi_n'. "
             "Cannot compute total phi."
         )
 
-    # Safely compute total phi without mutating the original dict
-    phi_s = extracted["phi_s"]
-    try:
-        phi_total = np.sum(np.asarray(phi_s, dtype=float), axis=0)
-    except Exception as e:
-        raise ValueError(
-            f"Failed to sum 'phi_s' into total 'phi'. Ensure it's a list/array of equal-length arrays. Error: {e}"
-        )
+    phi_n = extracted["phi_n"]
+    phi_total = np.sum(np.asarray(phi_n, dtype=float), axis=0)
 
-    # Build result without side-effects
-    result = {k: v for k, v in extracted.items() if k != "phi_s"}
+    # Build result
+    result = {k: v for k, v in extracted.items() if k != "phi_n"}
     result["phi"] = phi_total
     result["chi_PS"] = chi_PS
 
-    if keep_phi_s:
-        result["phi_s"] = phi_s
+    if keep_phi_n:
+        result["phi_n"] = phi_n
 
     if verbose:
         print(f"[build_scf_empty_pore_results] Loaded {pro_path.name}, "
               f"phi length = {len(phi_total)}")
 
     return result
-
-
-# %%
-if __name__ == "__main__":
-    import pandas as pd
-    from make_plot import plot_with_slider
-    raw = pd.read_table("SCF/output/empty_pore_input.pro", index_col=False)
-    R, Z, Phis = extract_volume_fractions_per_grafting_range(raw)
-    pore_radius = 26
-    pore_length = 52
-    walls = create_walls(len(R), len(Z), pore_radius, pore_length)
-    fig, ax = plot_with_slider(Z, R, Phis.transpose(0,2,1), fix_clim=True, walls=walls.T)
-    fig.show()
-# %%
-

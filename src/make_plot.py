@@ -106,7 +106,7 @@ def plot_with_slider(z, r, grids,
         vmax=vmax,
     )
 
-    ax.set_title("Polymer volume concentration for\n"+ fr"chains grafted at slice $z \in [{0, 1}]$")
+    ax.set_title("Contribution to polymer volume concentration for\n"+ fr"chains grafted at slice $z \in [{0, 1}]$")
     cbar = plt.colorbar(im, ax=ax)
     cbar.set_label(r"$\phi$")
 
@@ -530,3 +530,93 @@ def plot_volume_and_surface_matrices_cylinder(volume, surface):
     print()
     print("Cylindrical particle surface projection matrix:")
     print(surface)
+
+def plot_insertion_free_energy(SCF_results, pore_length, show_ground_state=False, xlim = None, **kwargs):
+    """
+    Plot insertion free energy profile ΔF_SF-SCF as a function of colloid position.
+
+    Parameters
+    ----------
+    SCF_results : pandas.DataFrame
+        Must contain columns ["colloid_position", "free_energy"] and metadata columns.
+    pore_length : int
+        Length of the pore (in lattice units).
+    ground_state_pos : int, optional
+        Colloid position chosen as ground state (default: None).
+    **kwargs :
+        Additional filters to subset SCF_results, e.g. chi_PS=0.6, chi_PC=0.0, colloid_diameter=6.
+
+    Returns
+    -------
+    fig, ax : matplotlib Figure and Axes
+    """
+
+    # --- Apply kwargs filters ---
+    df = SCF_results.copy()
+    for key, value in kwargs.items():
+        if key not in df.columns:
+            raise KeyError(f"Column {key!r} not in SCF_results")
+        df = df[df[key] == value]
+
+    if df.empty:
+        raise ValueError("No matching rows after applying filters")
+
+    # --- Check uniqueness of fixed parameters ---
+    ignore_cols = {"colloid_position", "phi", "colloid_mask", "free_energy"}
+    scalar_cols = [
+        c for c in df.columns
+        if c not in ignore_cols
+        and not df[c].apply(lambda x: isinstance(x, (list, np.ndarray))).any()
+    ]
+    for c in scalar_cols:
+        if df[c].nunique() > 1:
+            raise ValueError(
+                f"Ambiguous dataset: column {c!r} has multiple values, "
+                f"please fix with a keyword argument."
+            )
+
+    # --- Main plot ---
+    fig, ax = plt.subplots()
+
+    ax.plot(df["colloid_position"], df["free_energy"], marker="s")
+    ax.set_ylabel(r"$\Delta F_{\text{SF-SCF}}$")
+    ax.set_xlabel(r"$z_c$")
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+    # Ground-state reference point
+    if show_ground_state:
+        ref_idx = df["colloid_position"].abs().idxmax()
+        ground_state = df.loc[ref_idx]
+        ax.annotate(
+            "    Ground state",
+            xy=(ground_state["colloid_position"], ground_state["free_energy"]),
+            xycoords="data",
+            textcoords="offset points",
+            xytext=(10, 40),  # offset in points
+            arrowprops=dict(arrowstyle="->"),
+        )
+        ax.plot(
+            ground_state["colloid_position"],
+            ground_state["free_energy"],
+            marker="s",
+            color="red",
+            zorder=5,
+        )
+        if xlim is None:
+            ax.set_xlim((ground_state["colloid_position"]-5, 0))
+
+    # Vertical line at pore entrance (half pore length)
+    entrance_z = -pore_length // 2
+    ax.axvline(entrance_z, color="k", linestyle="-")
+
+    # Labels for exterior and interior
+    ylim = ax.get_ylim()
+    ax.text(entrance_z - 5, ylim[1] * 0.95, "exterior", ha="right", va="top")
+    ax.text(entrance_z + 5, ylim[1] * 0.05, "interior", ha="left", va="bottom")
+
+    # Shaded interior region
+    ax.axvspan(entrance_z, 0, facecolor="green", alpha=0.1, zorder=0)
+
+    return fig, ax
