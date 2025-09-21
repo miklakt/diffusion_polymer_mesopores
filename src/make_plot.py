@@ -161,7 +161,8 @@ def plot_with_slider(z, r, grids,
 def plot_grid(z, r, grid, 
               zlim=None, rlim=None, 
               walls=None, mirror=True, 
-              hatch_width=9.0
+              hatch_width=9.0,
+              cbar_label = r"$\phi$",
               ):
     """
     Plot a single phi(r,z) heatmap with optional mirrored axis and hatched background.
@@ -223,7 +224,7 @@ def plot_grid(z, r, grid,
 
     ax.set_title(r"Polymer volume concentration")
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label(r"$\phi$")
+    cbar.set_label(cbar_label)
 
     ax.set_xlabel("$z$")
     ax.set_ylabel("$r$")
