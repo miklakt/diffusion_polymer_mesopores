@@ -35,7 +35,12 @@ def extract_volume_fractions_per_grafting_range(df, value_cols=None
     
     phi_n = np.array(phi_n)
 
-    z_vals = z_vals - (np.max(z_vals)-np.min(z_vals))/2 #make pore canter at z=0
+    # z_vals = z_vals - (np.max(z_vals)-np.min(z_vals))/2 #make pore canter at z=0
+    # r_vals = r_vals-0.5 #point to the coordinate of the left corner of the grid element
+    rlayers, zlayers  = np.shape(phi.T)
+    
+    r_vals = np.arange(rlayers)
+    z_vals = np.arange(zlayers) - zlayers//2
 
     result = {
         "R":r_vals,
@@ -48,23 +53,18 @@ def extract_volume_fractions_per_grafting_range(df, value_cols=None
     
     return result
 
-def generate_circle_kernel(d):
-    radius = d/2
-    a = np.zeros((d, d), dtype =bool)
-    radius2 = radius**2
-    for i in range(d):
-        for j in range(d):
-            distance2 = (radius-i-0.5)**2 + (radius-j-0.5)**2
-            if distance2<radius2:
-                a[i,j] = True
-    return a
+def circular_kernel(radius):
+    """Create a circular (disk) structuring element with given radius."""
+    y, x = np.ogrid[-radius:radius+1, -radius:radius+1]
+    mask = x**2 + y**2 <= radius**2
+    return mask.astype(np.bool_)
 
 def create_walls(xlayers, ylayers, pore_radius, pore_length, colloid_diameter = None):
     from scipy import ndimage
     W_arr = np.zeros((ylayers,xlayers), dtype = bool)
-    W_arr[int(ylayers/2-pore_length/2):int(ylayers/2+pore_length/2+1), pore_radius:] = True
+    W_arr[int(ylayers/2-pore_length/2):int(ylayers/2+pore_length/2), pore_radius:] = True
     if colloid_diameter is not None:
-        W_arr = ndimage.binary_dilation(W_arr, structure = generate_circle_kernel(d))
+        W_arr = ndimage.binary_dilation(W_arr, structure = circular_kernel(colloid_diameter//2))
     return W_arr.T
 
 def build_scf_results(

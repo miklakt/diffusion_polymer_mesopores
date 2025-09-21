@@ -453,8 +453,9 @@ def generate_sphere_volume_surface_matrices(sphere_radius, center_coord: float |
     try:
         z_shift, r_shift = center_coord
     except TypeError:
-        z_shift = 0
-        r_shift = center_coord
+        # Only radial offset was provided
+        center_coord = (0, center_coord)
+        return generate_sphere_volume_surface_matrices(sphere_radius, center_coord, bins)
     sphere = Sphere2D(sphere_radius, r_shift)
     volume = sphere.generate_volume_kernel(bins)
     surface = sphere.generate_surface_kernel(bins)
@@ -474,20 +475,20 @@ if __name__ == "__main__":
 
     # Plot volume kernel
     fig, ax = plt.subplots()
-    im = ax.imshow(volume.T, extent=extent, origin="lower", cmap="Blues_r")
+    im = ax.imshow(volume, extent=extent, origin="lower", cmap="Blues_r")
     cbar = plt.colorbar(im, shrink=0.6)
     cbar.set_label("Volume")
-    ax.set_xlabel("$r$")
-    ax.set_ylabel("$z$")
+    ax.set_xlabel("$z$")
+    ax.set_ylabel("$r$")
     fig.show()
 
     # Plot surface kernel
     fig, ax = plt.subplots()
-    im = ax.imshow(surface.T, extent=extent, origin="lower", cmap="Blues_r")
+    im = ax.imshow(surface, extent=extent, origin="lower", cmap="Blues_r")
     cbar = plt.colorbar(im, shrink=0.6)
     cbar.set_label("Surface")
-    ax.set_xlabel("$r$")
-    ax.set_ylabel("$z$")
+    ax.set_xlabel("$z$")
+    ax.set_ylabel("$r$")
     fig.show()
 
     # # Combined RGB visualization (surface in G, volume in B, difference in R)

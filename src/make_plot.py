@@ -96,14 +96,16 @@ def plot_with_slider(z, r, grids,
 
     # start from middle slice (logical 0)
     idx0 = pore_length // 2
+    extent = [z.min(), z.min()+len(z), r.min(), r.min()+len(r)]
     im = ax.imshow(
         grids[idx0],
-        extent=[z.min(), z.max(), r.min(), r.max()],
+        extent=extent,
         origin="lower",
         aspect="equal",
         cmap=cmap_,
         vmin=vmin,
         vmax=vmax,
+        interpolation="none",
     )
 
     ax.set_title("Contribution to polymer volume concentration for\n"+ fr"chains grafted at slice $z \in [{0, 1}]$")
@@ -214,12 +216,14 @@ def plot_grid(z, r, grid,
     cmap_ = plt.colormaps["CMRmap_r"]
     cmap_.set_bad(color=(0, 0, 0, 0))  # transparent for masked values
 
+    extent = [z.min(), z.min()+len(z), r.min(), r.min()+len(r)]
     im = ax.imshow(
         grid,
-        extent=[z.min(), z.max(), r.min(), r.max()],
+        extent = extent,
         origin="lower",
         aspect="equal",
         cmap=cmap_,
+        interpolation="none",
     )
 
     ax.set_title(r"Polymer volume concentration")
@@ -334,7 +338,7 @@ def plot_phi_with_colloid_slider(
     else:
         grids = [np.ma.masked_invalid(g) for g in grids]
 
-    extent = [Zs.min(), Zs.max(), Rs.min(), Rs.max()]
+    extent = [Zs.min(), Zs.min()+len(Zs), Rs.min(), Rs.min()+len(Rs)]
 
     # Axis limits
     if zlim is None:
@@ -362,12 +366,13 @@ def plot_phi_with_colloid_slider(
     idx0 = 0
     im = ax.imshow(
         grids[idx0],
-        extent=extent,
+        extent = extent,
         origin="lower",
         aspect="equal",
         cmap=cmap_,
         vmin=vmin,
         vmax=vmax,
+        interpolation = "none",
     )
 
     ax.set_title(fr"Colloid at position $z = {positions[idx0]}$")
@@ -651,7 +656,7 @@ def interactive_sphere_kernels(colloid_diameter: int, r_shift_max: int = 60):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
     # Volume kernel plot
-    im1 = ax1.imshow(volume, extent=extent, origin="lower", aspect="equal")
+    im1 = ax1.imshow(volume, extent=extent, origin="lower", aspect="equal", interpolation = "none")
     cbar1 = plt.colorbar(im1, ax=ax1, shrink=0.6)
     cbar1.set_label("Volume")
     ax1.set_xlabel("$z$")
@@ -660,7 +665,7 @@ def interactive_sphere_kernels(colloid_diameter: int, r_shift_max: int = 60):
     ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     # Surface kernel plot
-    im2 = ax2.imshow(surface, extent=extent, origin="lower", aspect="equal")
+    im2 = ax2.imshow(surface, extent=extent, origin="lower", aspect="equal", interpolation = "none")
     cbar2 = plt.colorbar(im2, ax=ax2, shrink=0.6)
     cbar2.set_label("Surface")
     ax2.set_xlabel("$z$")
