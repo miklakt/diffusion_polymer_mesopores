@@ -464,7 +464,9 @@ def interactive_plot_phi(SCF_results, **plot_kwargs):
         dropdowns[col] = widgets.Dropdown(
             options=options,
             description=col,
-            value=None
+            value=None,
+            style={'description_width': '100px'},
+            layout=widgets.Layout(width='200px')
         )
     
     # Buttons
@@ -620,3 +622,78 @@ def plot_insertion_free_energy(SCF_results, pore_length, show_ground_state=False
     ax.axvspan(entrance_z, 0, facecolor="green", alpha=0.1, zorder=0)
 
     return fig, ax
+
+def interactive_sphere_kernels(colloid_diameter: int, r_shift_max: int = 60):
+    """
+    Build an interactive figure showing volume and surface kernels
+    for a sphere of given diameter, with adjustable radial shift.
+
+    Parameters
+    ----------
+    colloid_diameter : int
+        Diameter of the colloid (lattice units).
+    r_shift_max : int, optional
+        Maximum radial shift allowed by the slider (default: 60).
+    """
+    from src.sphere import generate_sphere_volume_surface_matrices
+    from matplotlib.widgets import Slider
+    from matplotlib.ticker import MaxNLocator
+    # Initial state
+    initial_r_shift = 0
+    volume, surface, extent = generate_sphere_volume_surface_matrices(
+        colloid_diameter // 2, (0, initial_r_shift)
+    )
+
+    # ------------------------------------------------------------------
+    # Create figure with two subplots (volume and surface)
+    # ------------------------------------------------------------------
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+    # Volume kernel plot
+    im1 = ax1.imshow(volume, extent=extent, origin="lower", aspect="equal")
+    cbar1 = plt.colorbar(im1, ax=ax1, shrink=0.6)
+    cbar1.set_label("Volume")
+    ax1.set_xlabel("$z$")
+    ax1.set_ylabel("$r$")
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    # Surface kernel plot
+    im2 = ax2.imshow(surface, extent=extent, origin="lower", aspect="equal")
+    cbar2 = plt.colorbar(im2, ax=ax2, shrink=0.6)
+    cbar2.set_label("Surface")
+    ax2.set_xlabel("$z$")
+    ax2.set_ylabel("$r$")
+    ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax2.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    plt.subplots_adjust(bottom=0.25)  # leave space for slider
+
+    # ------------------------------------------------------------------
+    # Slider for r_shift
+    # ------------------------------------------------------------------
+    ax_slider = plt.axes([0.25, 0.1, 0.5, 0.03])
+    slider = Slider(ax_slider, "r_shift", 0, r_shift_max, valinit=initial_r_shift, valstep=1)
+
+    def update(val):
+        r_shift = slider.val
+        volume, surface, extent = generate_sphere_volume_surface_matrices(
+            colloid_diameter // 2, (0, r_shift)
+        )
+
+        # Update images and extents
+        im1.set_data(volume)
+        im1.set_extent(extent)
+
+        im2.set_data(surface)
+        im2.set_extent(extent)
+
+        im1.set_clim(0, np.max(volume))
+        im2.set_clim(0, np.max(surface))
+
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+
+    # plt.show()
+    return fig, (ax1, ax2), slider
