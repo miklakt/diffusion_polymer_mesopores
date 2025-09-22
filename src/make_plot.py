@@ -444,7 +444,7 @@ def plot_phi_with_colloid_slider(
 
 
 
-def interactive_plot_phi(SCF_results, **plot_kwargs):
+def interactive_plot_phi_vscode(SCF_results, **plot_kwargs):
     """
     Interactive widget with dropdowns for scalar columns.
     User selects filters and presses Update to draw a new figure.
@@ -510,7 +510,84 @@ def interactive_plot_phi(SCF_results, **plot_kwargs):
     print("TO PLOT SELECT PARAMETERS:")
     display(controls)
     # fig
-    # clear_output(wait=True)
+    clear_output(wait=True)
+
+
+def interactive_plot_phi_jupyter(SCF_results, **plot_kwargs):
+    """
+    Interactive widget with dropdowns for scalar columns.
+    User selects filters and presses Update to draw a new figure.
+    Works in both VS Code and Jupyter Notebook/Lab.
+    """
+    import ipywidgets as widgets
+    from IPython.display import display
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    ignore_cols = {"colloid_position", "phi", "colloid_mask", "free_energy"}
+    scalar_cols = [
+        c for c in SCF_results.columns
+        if c not in ignore_cols
+        and not SCF_results[c].apply(lambda x: isinstance(x, (list, np.ndarray))).any()
+    ]
+
+    # Dropdowns
+    dropdowns = {}
+    for col in scalar_cols:
+        options = [None] + sorted(SCF_results[col].unique().tolist())
+        dropdowns[col] = widgets.Dropdown(
+            options=options,
+            description=col,
+            value=None,
+            style={'description_width': '100px'},
+            layout=widgets.Layout(width='200px')
+        )
+
+    # Buttons
+    update_btn = widgets.Button(description="Update", button_style="success")
+    reset_btn = widgets.Button(description="Reset", button_style="warning")
+
+    # Output area for the plot
+    out_plot = widgets.Output()
+
+    def get_filters():
+        return {col: dd.value for col, dd in dropdowns.items() if dd.value is not None}
+
+    def update_plot(_=None):
+        filters = get_filters()
+        with out_plot:
+            out_plot.clear_output(wait=True)
+            fig = plot_phi_with_colloid_slider(SCF_results, **plot_kwargs, **filters)
+            plt.show()  # ensures proper rendering in both Jupyter and VS Code
+
+    def reset_filters(_=None):
+        for dd in dropdowns.values():
+            dd.value = None
+        with out_plot:
+            out_plot.clear_output()
+
+    update_btn.on_click(update_plot)
+    reset_btn.on_click(reset_filters)
+
+    controls = widgets.VBox(list(dropdowns.values()) + [widgets.HBox([update_btn, reset_btn])])
+    display(widgets.VBox([controls, out_plot]))
+    print("TO PLOT SELECT PARAMETERS:")
+
+
+def interactive_plot_phi(SCF_results, **plot_kwargs):
+    """
+    Wrapper that chooses the correct interactive plotting function
+    depending on whether the code is run inside VS Code or Jupyter.
+    """
+    import os
+
+    in_vscode = "VSCODE_PID" in os.environ
+
+    if in_vscode:
+        return interactive_plot_phi_vscode(SCF_results, **plot_kwargs)
+    else:
+        return interactive_plot_phi_jupyter(SCF_results, **plot_kwargs)
+
 
 
 def plot_volume_and_surface_matrices_cylinder(volume, surface):
